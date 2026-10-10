@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoAudit AI — Autonomous AppSec & Compiler Copilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #07090e;
+      color: #e2e8f0;
+    }
+    pre, code, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .grid-bg {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.8);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- Background Glow & Grid -->
+  <div class="fixed inset-0 grid-bg opacity-30 pointer-events-none z-0"></div>
+  <div class="fixed top-0 left-1/3 w-[600px] h-[300px] bg-cyan-600/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-1/4 w-[500px] h-[300px] bg-indigo-600/10 blur-[140px] rounded-full pointer-events-none -z-10"></div>
+
+  <!-- Top Navigation Bar -->
+  <nav class="border-b border-white/5 bg-[#090d16]/80 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-[1700px] mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-cyan-500/25 ring-1 ring-white/20">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold tracking-tight text-white">AutoAudit<span class="text-cyan-400">.ai</span></span>
+          <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-300 border border-cyan-400/20 font-medium">Dual-Pass Engine</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2 text-xs text-slate-400 font-mono">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Core v2.4 Active</span>
+        </div>
+        <button onclick="window.print()" class="text-xs bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 px-3.5 py-1.5 rounded-lg border border-slate-700/60 transition flex items-center gap-2">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+          Export Report
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Workspace Container: Split Screen Layout -->
+  <main class="max-w-[1700px] mx-auto px-6 py-6 flex-1 w-full relative z-10 flex flex-col gap-6">
+
+    <!-- Subheader Banner -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+          Autonomous Security Scanner & Auto-Healer
+        </h1>
+        <p class="text-xs text-slate-400 mt-0.5">Static taint analysis + Generative dual-pass verification against OWASP Top 10 & ISO C/C++ compilation standards.</p>
+      </div>
+
+      <!-- Input Switcher (Pill tabs) -->
+      <div class="flex items-center bg-[#0d1322] border border-white/10 rounded-xl p-1 gap-1">
+        <button id="tabSnippet" onclick="switchTab('snippet')" class="text-xs font-medium px-3.5 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition">Paste Code</button>
+        <button id="tabZip" onclick="switchTab('zip')" class="text-xs font-medium px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition">Archive ZIP</button>
+        <button id="tabGithub" onclick="switchTab('github')" class="text-xs font-medium px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition">GitHub Repo</button>
+      </div>
+    </div>
+
+    <!-- IDE Studio Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+      
+      <!-- LEFT COLUMN: Source Input Console -->
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        
+        <div class="bg-[#0b101d]/90 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[740px]">
+          <!-- Editor Titlebar -->
+          <div class="px-4 py-2.5 bg-[#0e1424] border-b border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+              </div>
+              <span class="text-xs text-slate-400 font-mono ml-2">source_sandbox.raw</span>
+            </div>
+            <span class="text-[10px] font-mono uppercase text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded border border-white/5">Auto-Detect</span>
+          </div>
+
+          <!-- Input Panel 1: Snippet Area -->
+          <div id="sectionSnippet" class="flex-1 flex flex-col p-3">
+            <textarea id="codeInput" spellcheck="false" placeholder="// Paste any source code snippet here...
+// Supports: C, C++, Python, JavaScript, Java, Go, Rust, PHP, SQL" 
+              class="w-full flex-1 bg-transparent border-0 text-xs font-mono text-slate-300 p-2 focus:outline-none resize-none custom-scroll placeholder-slate-600 leading-relaxed"></textarea>
+          </div>
+
+          <!-- Input Panel 2: ZIP File Upload -->
+          <div id="sectionZip" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center border-dashed border-2 border-white/10 m-4 rounded-xl bg-slate-900/40">
+            <svg class="w-10 h-10 text-cyan-400/80 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <p class="text-xs font-medium text-slate-300">Upload Project ZIP Archive</p>
+            <p class="text-[11px] text-slate-500 mt-1 mb-4">Supports multi-language code repositories</p>
+            <input type="file" id="zipInput" accept=".zip" class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500/20 file:text-cyan-300 hover:file:bg-cyan-500/30 file:border file:border-cyan-500/40 cursor-pointer" />
+          </div>
+
+          <!-- Input Panel 3: GitHub URL -->
+          <div id="sectionGithub" class="hidden flex-1 flex flex-col justify-center p-8 space-y-4">
+            <div class="space-y-1">
+              <label class="text-xs font-medium text-slate-300">Public GitHub Repository</label>
+              <p class="text-[11px] text-slate-500">AutoAudit will parse root directory files & dependencies</p>
+            </div>
+            <input type="url" id="githubInput" placeholder="https://github.com/torvalds/linux" class="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-cyan-400/60" />
+          </div>
+
+          <!-- Action Launch Bar -->
+          <div class="p-3 bg-[#0e1424] border-t border-white/5 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400 font-mono" id="engineStatusLine">Ready for telemetry</span>
+            <button id="btnScan" onclick="triggerScan()" class="bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-medium text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 ring-1 ring-white/20 transition flex items-center gap-2">
+              <span>⚡</span> Run Audit & Self-Heal
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Telemetry, Findings & Diff Studio -->
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        
+        <!-- Live Metrics Strip -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-[#0b101d]/90 border border-white/10 rounded-xl p-3.5 relative overflow-hidden">
+            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Health Rating</span>
+            <div class="text-2xl font-bold mt-1 text-emerald-400" id="healthScore">--</div>
+            <div class="text-[10px] text-slate-500 truncate" id="healthDesc">Awaiting input run</div>
+          </div>
+          
+          <div class="bg-[#0b101d]/90 border border-white/10 rounded-xl p-3.5">
+            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Security Flaws</span>
+            <div class="text-2xl font-bold mt-1 text-rose-500" id="secCount">0</div>
+            <div class="text-[10px] text-rose-400/80">OWASP / CWE findings</div>
+          </div>
+
+          <div class="bg-[#0b101d]/90 border border-white/10 rounded-xl p-3.5">
+            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Compiler / Syntax</span>
+            <div class="text-2xl font-bold mt-1 text-amber-500" id="bugCount">0</div>
+            <div class="text-[10px] text-amber-400/80">Build-breaking bugs</div>
+          </div>
+
+          <div class="bg-[#0b101d]/90 border border-white/10 rounded-xl p-3.5">
+            <span class="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Self-Validation</span>
+            <div class="text-xs font-semibold mt-2.5 text-slate-400 flex items-center gap-1.5" id="valStatusPill">
+              <span class="w-2 h-2 rounded-full bg-slate-600"></span> Idle
+            </div>
+            <div class="text-[10px] text-slate-500 truncate mt-0.5" id="valNote">Two-pass check</div>
+          </div>
+        </div>
+
+        <!-- Terminal Output / Findings Stack -->
+        <div class="bg-[#0b101d]/90 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[670px]">
+          
+          <!-- Tab Navigation for Output -->
+          <div class="px-4 py-2 bg-[#0e1424] border-b border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <button id="viewTabDiff" onclick="switchOutputTab('diff')" class="text-xs font-medium px-3 py-1 rounded-lg bg-slate-800 text-white border border-white/10 transition">Auto-Healed Diff</button>
+              <button id="viewTabIssues" onclick="switchOutputTab('issues')" class="text-xs font-medium px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Issue Registry (<span id="issuesCount">0</span>)</button>
+            </div>
+            <button onclick="copyFixedCode()" class="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 px-3 py-1 rounded-lg transition flex items-center gap-1.5">
+              <span>📋</span> Copy Patch
+            </button>
+          </div>
+
+          <!-- VIEW A: Visual Code Diff Pane -->
+          <div id="outputDiffContainer" class="flex-1 overflow-auto p-4 custom-scroll font-mono text-xs leading-relaxed bg-[#06080e]">
+            <div class="text-slate-500 text-center py-24 font-mono text-xs">
+              ⚡ Paste faulty code on the left and hit "Run Audit" to view side-by-side patch generation.
+            </div>
+          </div>
+
+          <!-- VIEW B: Issue Registry Pane -->
+          <div id="outputIssuesContainer" class="hidden flex-1 overflow-auto p-4 space-y-3 custom-scroll">
+            <div class="text-slate-500 text-center py-24 font-mono text-xs">
+              No active scan telemetry recorded yet.
+            </div>
+          </div>
+
+          <!-- Bottom Footer Telemetry Strip -->
+          <div class="px-4 py-2 bg-[#090d16] border-t border-white/5 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+            <span id="telemetrySummary" class="truncate max-w-[80%]">Idle</span>
+            <span class="text-slate-400">Pure JSON Engine</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    let activeInputTab = 'snippet';
+    let currentFixedCode = '';
+
+    function switchTab(tab) {
+      activeInputTab = tab;
+      ['snippet', 'zip', 'github'].forEach(t => {
+        document.getElementById(`section${capitalize(t)}`).classList.add('hidden');
+        document.getElementById(`tab${capitalize(t)}`).className = "text-xs font-medium px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white transition";
+      });
+      document.getElementById(`section${capitalize(tab)}`).classList.remove('hidden');
+      document.getElementById(`tab${capitalize(tab)}`).className = "text-xs font-medium px-3.5 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition";
+    }
+
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    function switchOutputTab(tab) {
+      if (tab === 'diff') {
+        document.getElementById('outputDiffContainer').classList.remove('hidden');
+        document.getElementById('outputIssuesContainer').classList.add('hidden');
+        document.getElementById('viewTabDiff').className = "text-xs font-medium px-3 py-1 rounded-lg bg-slate-800 text-white border border-white/10 transition";
+        document.getElementById('viewTabIssues').className = "text-xs font-medium px-3 py-1 rounded-lg text-slate-400 hover:text-white transition";
+      } else {
+        document.getElementById('outputDiffContainer').classList.add('hidden');
+        document.getElementById('outputIssuesContainer').classList.remove('hidden');
+        document.getElementById('viewTabIssues').className = "text-xs font-medium px-3 py-1 rounded-lg bg-slate-800 text-white border border-white/10 transition";
+        document.getElementById('viewTabDiff').className = "text-xs font-medium px-3 py-1 rounded-lg text-slate-400 hover:text-white transition";
+      }
+    }
+
+    async function triggerScan() {
+      if (activeInputTab === 'snippet') {
+        const code = document.getElementById('codeInput').value;
+        if (!code.trim()) return alert("Please enter source code in the console!");
+        runAnalysis('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+      } else if (activeInputTab === 'zip') {
+        const file = document.getElementById('zipInput').files[0];
+        if (!file) return alert("Please select a .zip file!");
+        const form = new FormData();
+        form.append('projectZip', file);
+        runAnalysis('/api/scan-zip', { method: 'POST', body: form });
+      } else if (activeInputTab === 'github') {
+        const repoUrl = document.getElementById('githubInput').value;
+        if (!repoUrl.trim()) return alert("Please provide a GitHub repo link!");
+        runAnalysis('/api/scan-github', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ repoUrl }) });
+      }
+    }
+
+    async function runAnalysis(endpoint, options) {
+      setLoadingState(true);
+      try {
+        const res = await fetch(endpoint, options);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || "Failed audit cycle.");
+        renderSaaSAudit(data);
+      } catch (err) {
+        alert("Scan Error: " + err.message);
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    function renderSaaSAudit(data) {
+      const ai = data.aiAnalysis || {};
+      const issues = ai.issues || [];
+      currentFixedCode = ai.fixedCode || data.originalCode;
+
+      // Robust Category Matching
+      let secCount = 0;
+      let bugCount = 0;
+
+      issues.forEach(i => {
+        const cat = (i.category || '').toUpperCase();
+        if (cat.includes('SEC') || (i.owasp && i.owasp !== 'N/A')) {
+          secCount++;
+        } else {
+          bugCount++;
+        }
+      });
+
+      document.getElementById('secCount').innerText = secCount;
+      document.getElementById('bugCount').innerText = bugCount;
+      document.getElementById('issuesCount').innerText = issues.length;
+
+      // Realistic Health Score (Penalize based on detected flaws)
+      let score = 100 - (secCount * 25) - (bugCount * 15);
+      score = Math.max(10, Math.min(100, score));
+      
+      if (issues.length > 0 && score >= 100) {
+        score = 65;
+      }
+
+      const scoreEl = document.getElementById('healthScore');
+      scoreEl.innerText = `${score}/100`;
+      scoreEl.className = `text-2xl font-bold mt-1 ${score > 75 ? 'text-emerald-400' : score > 45 ? 'text-amber-400' : 'text-rose-500'}`;
+      document.getElementById('healthDesc').innerText = score > 75 ? 'Production Ready' : score > 45 ? 'Warning: Fixes Applied' : 'Critical Defects Found';
+
+      // Self-Validation Status Logic
+      const valPill = document.getElementById('valStatusPill');
+      const valNote = document.getElementById('valNote');
+
+      if (ai.validationPassed !== false) {
+        valPill.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> Verified Clean`;
+        valPill.className = "text-xs font-semibold mt-2.5 text-emerald-400 flex items-center gap-1.5";
+        valNote.innerText = issues.length > 0 ? "Patched & Verified (Pass 2)" : "Zero defects (Pass 1)";
+      } else {
+        valPill.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-400"></span> Flaws Detected`;
+        valPill.className = "text-xs font-semibold mt-2.5 text-rose-400 flex items-center gap-1.5";
+        valNote.innerText = "Residuals present";
+      }
+
+      document.getElementById('telemetrySummary').innerText = ai.summary || "Scan complete.";
+
+      // Render Issues List
+      const issuesContainer = document.getElementById('outputIssuesContainer');
+      issuesContainer.innerHTML = '';
+      if (issues.length === 0) {
+        issuesContainer.innerHTML = `<div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">Zero security or syntax flaws detected. Passes standard audit criteria.</div>`;
+      } else {
+        issues.forEach(issue => {
+          const cat = (issue.category || '').toUpperCase();
+          const isSec = cat.includes('SEC') || (issue.owasp && issue.owasp !== 'N/A');
+          const card = document.createElement('div');
+          card.className = "p-3.5 rounded-xl bg-[#090e18] border border-white/5 space-y-2";
+          card.innerHTML = `
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-white">${escapeHtml(issue.title)}</span>
+                <span class="text-[9px] font-mono px-2 py-0.5 rounded ${isSec ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">${issue.severity || 'HIGH'}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                ${issue.cwe && issue.cwe !== 'N/A' ? `<span class="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">${escapeHtml(issue.cwe)}</span>` : ''}
+                ${issue.owasp && issue.owasp !== 'N/A' ? `<span class="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">${escapeHtml(issue.owasp)}</span>` : ''}
+              </div>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(issue.explanation)}</p>
+            <div class="text-[11px] text-emerald-400 font-mono bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded-lg">
+              <strong class="text-emerald-300">Patch:</strong> ${escapeHtml(issue.recommendation)}
+            </div>
+          `;
+          issuesContainer.appendChild(card);
+        });
+      }
+
+      // Render Diff View
+      renderDiff(data.originalCode, currentFixedCode);
+      switchOutputTab('diff');
+    }
+
+    function renderDiff(oldCode, newCode) {
+      const container = document.getElementById('outputDiffContainer');
+      container.innerHTML = '';
+      const oldLines = oldCode.split('\n');
+      const newLines = newCode.split('\n');
+
+      let i = 0, j = 0;
+      while (i < oldLines.length || j < newLines.length) {
+        if (i < oldLines.length && j < newLines.length && oldLines[i] === newLines[j]) {
+          container.appendChild(makeDiffRow(`  ${oldLines[i]}`, 'text-slate-400'));
+          i++; j++;
+        } else {
+          if (i < oldLines.length) {
+            container.appendChild(makeDiffRow(`- ${oldLines[i]}`, 'text-rose-400 bg-rose-950/40 border-l-2 border-rose-500'));
+            i++;
+          }
+          if (j < newLines.length) {
+            container.appendChild(makeDiffRow(`+ ${newLines[j]}`, 'text-emerald-400 bg-emerald-950/40 border-l-2 border-emerald-500'));
+            j++;
+          }
+        }
+      }
+    }
+
+    function makeDiffRow(text, cls) {
+      const el = document.createElement('div');
+      el.className = `px-3 py-0.5 whitespace-pre ${cls}`;
+      el.textContent = text;
+      return el;
+    }
+
+    function copyFixedCode() {
+      if (!currentFixedCode) return alert("No patch available yet.");
+      navigator.clipboard.writeText(currentFixedCode);
+      alert("Validated patch copied to clipboard!");
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function setLoadingState(loading) {
+      const btn = document.getElementById('btnScan');
+      const statusLine = document.getElementById('engineStatusLine');
+      btn.disabled = loading;
+      if (loading) {
+        btn.innerHTML = `<span class="animate-spin inline-block mr-1">↻</span> Auditing...`;
+        statusLine.innerText = "Analyzing syntax AST & AST rules...";
+      } else {
+        btn.innerHTML = `<span>⚡</span> Run Audit & Self-Heal`;
+        statusLine.innerText = "Audit completed";
+      }
+    }
+  </script>
+</body>
+</html>
